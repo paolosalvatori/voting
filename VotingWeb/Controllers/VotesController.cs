@@ -28,7 +28,8 @@ namespace VotingWeb.Controllers
             try
             {
                 this.logger = logger;
-                var endpoint = $"http://{configuration["VotingDataEndpoint"] ?? "votingdata"}/api/VoteData";
+                var url = configuration["VotingDataEndpoint"] ?? "votingdata";
+                var endpoint = $"http://{url}/";
                 httpClient = new HttpClient
                 {
                     BaseAddress = new Uri(endpoint)
@@ -52,7 +53,7 @@ namespace VotingWeb.Controllers
                 var result = new List<KeyValuePair<string, int>>();
 
                 
-                var response = await httpClient.GetAsync(string.Empty);
+                var response = await httpClient.GetAsync("/api/VoteData");
 
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
@@ -84,7 +85,7 @@ namespace VotingWeb.Controllers
                 }
                 logger.LogInformation($"Adding vote for {name}");
 
-                using (var response = await httpClient.PutAsync($"/{name}", null))
+                using (var response = await httpClient.PutAsync($"/api/VoteData/{name}", null))
                 {
                     return new ContentResult
                     {
@@ -108,7 +109,7 @@ namespace VotingWeb.Controllers
             {
                 logger.LogInformation($"Deleting votes for {name}");
 
-                using (var response = await httpClient.DeleteAsync($"/{name}"))
+                using (var response = await httpClient.DeleteAsync($"/api/VoteData/{name}"))
                 {
                     if (response.StatusCode != HttpStatusCode.OK)
                     {
