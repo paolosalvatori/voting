@@ -3,6 +3,7 @@
 
 # ignore single file
 docker-compose.override.yml
+docker-compose.yml
 
 # User-specific files
 *.suo
