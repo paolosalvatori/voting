@@ -1,5 +1,8 @@
 ﻿#region Using Directives
 
+using Microsoft.ApplicationInsights.Channel;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.ApplicationInsights.WindowsServer.TelemetryChannel;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +31,13 @@ namespace VotingData
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddOptions();
+            var aiStorageFolder = Configuration.GetValue("ApplicationInsightsStorageFolder", "ApplicationInsights");
+            if (aiStorageFolder != null)
+            {
+                // For Linux OS
+                services.AddSingleton<ITelemetryChannel>(new ServerTelemetryChannel { StorageFolder = aiStorageFolder });
+            }
+            services.AddSingleton<ITelemetryInitializer, TelemetryInitializer>();
             services.AddApplicationInsightsTelemetry(Configuration);
             services.Configure<RepositoryServiceOptions>(Configuration.GetSection("RepositoryService"));
             services.Configure<NotificationServiceOptions>(Configuration.GetSection("NotificationService"));

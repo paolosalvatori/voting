@@ -35,6 +35,7 @@ using Microsoft.ApplicationInsights.DataContracts;
 using VotingData.Models;
 using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Azure.ServiceBus.Diagnostics;
 
 #endregion
 
@@ -140,57 +141,70 @@ namespace VotingData.Services
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            // StartOperation is a helper method that initializes the telemetry item
-            // and allows correlation of this operation with its parent and children.
-            var queueName = options.ServiceBus.QueueName.FirstLetterToUpper();
-            using (var operation = telemetryClient.StartOperation<DependencyTelemetry>($"SendEventTo{queueName}Queue"))
+            var message = new Message(Encoding.UTF8.GetBytes(notification.Body))
             {
-                operation.Telemetry.Type = "Queue";
-                operation.Telemetry.Data = $"Send {queueName}";
+                MessageId = Guid.NewGuid().ToString()
+            };
 
-                var message = new Message(Encoding.UTF8.GetBytes(notification.Body))
-                {
-                    MessageId = Guid.NewGuid().ToString()
-                };
+            message.ExtractActivity();
 
-
-                message.UserProperties.Add("source", "VotingData");
-                message.UserProperties.Add("ParentId", operation.Telemetry.Id);
-                message.UserProperties.Add("RootId", operation.Telemetry.Context.Operation.Id);
-
-                if (notification.UserProperties != null && notification.UserProperties.Any())
-                {
-                    foreach (var property in notification.UserProperties)
-                    {
-                        message.UserProperties.Add(property.Key, property.Value);
-                    }
-                }
-
-                try
-                {
-                    await queueClient.SendAsync(message);
-
-                    // Set operation.Telemetry Success and ResponseCode here.
-                    operation.Telemetry.Success = true;
-                }
-                catch (Exception e)
-                {
-                    telemetryClient.TrackException(e);
-                    // Set operation.Telemetry Success and ResponseCode here.
-                    operation.Telemetry.Success = false;
-                    throw;
-                }
-                finally
-                {
-                    telemetryClient.StopOperation(operation);
-                }
+            try
+            {
+                await queueClient.SendAsync(message).ConfigureAwait(false);
             }
+            catch (Exception e)
+            {
+                telemetryClient.TrackException(e);
+                throw;
+            }
+
+            //// StartOperation is a helper method that initializes the telemetry item
+            //// and allows correlation of this operation with its parent and children.
+            //var queueName = options.ServiceBus.QueueName.FirstLetterToUpper();
+            //using (var operation = telemetryClient.StartOperation<DependencyTelemetry>(activity))
+            //{
+            //    operation.Telemetry.Type = "Queue";
+            //    operation.Telemetry.Data = "Send";
+            //    operation.Telemetry.Target = queueName;
+            //    operation.Telemetry.Properties.Add(nameof(Message.MessageId), message.MessageId);
+
+            //    message.UserProperties.Add("source", "VotingData");
+
+            //    message.UserProperties.Add("ParentId", operation.Telemetry.Id);
+            //    message.UserProperties.Add("RootId", operation.Telemetry.Context.Operation.Id);
+
+            //    if (notification.UserProperties != null && notification.UserProperties.Any())
+            //    {
+            //        foreach (var property in notification.UserProperties)
+            //        {
+            //            message.UserProperties.Add(property.Key, property.Value);
+            //        }
+            //    }
+
+            //    try
+            //    {
+            //        await queueClient.SendAsync(message).ConfigureAwait(false);
+
+            //        // Set operation.Telemetry Success and ResponseCode here.
+            //        operation.Telemetry.Success = true;
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        telemetryClient.TrackException(e);
+
+            //        // Set operation.Telemetry Success and ResponseCode here.
+            //        operation.Telemetry.Success = false;
+            //        throw;
+            //    }
+            //    finally
+            //    {
+            //        telemetryClient.StopOperation(operation);
+            //    }
+            //}
 
             stopwatch.Stop();
             logger.LogInformation($"Notification sent to {options.ServiceBus.QueueName} queue in {stopwatch.ElapsedMilliseconds} ms.");
         }
-
-        
         #endregion
     }
 
