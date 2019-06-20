@@ -1,9 +1,12 @@
 ﻿#region Using Directives
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Azure.KeyVault;
+using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.ApplicationInsights;
+using Microsoft.Extensions.Configuration.AzureKeyVault; 
 #endregion
 
 namespace VotingWeb
@@ -50,12 +53,44 @@ namespace VotingWeb
         #endregion
 
         #region Private Methods
-        private static void GetApplicationInsightsInstrumentationKey(WebHostBuilderContext webHostBuilderContext, IConfigurationBuilder configurationBuilder)
+        private static void GetApplicationInsightsInstrumentationKey(WebHostBuilderContext context, IConfigurationBuilder configurationBuilder)
         {
-            var configuration = configurationBuilder.Build();
+            // Read from default configuration providers: config files and environment variables
+            var builtConfig = configurationBuilder.Build();
 
-            // Read the Application Insights Instrumentation Key
-            applicationInsightsInstrumentationKey = configuration["ApplicationInsights:InstrumentationKey"];
+            var keyVaultName = builtConfig["KeyVault:Name"];
+            var keyVaultConnectionString = builtConfig["KeyVault:ConnectionString"];
+
+            if (string.IsNullOrWhiteSpace(keyVaultName))
+            {
+                return;
+            }
+
+            var keyVaultUrl = $"https://{keyVaultName}.vault.azure.net/";
+
+            if (string.IsNullOrWhiteSpace(keyVaultConnectionString) ||
+               string.Compare(keyVaultConnectionString, "none", true) == 0)
+            {
+                var azureServiceTokenProvider = new AzureServiceTokenProvider();
+                var keyVaultClient = new KeyVaultClient((authority, resource, scope) => azureServiceTokenProvider.KeyVaultTokenCallback(authority, resource, scope));
+                configurationBuilder.AddAzureKeyVault(keyVaultUrl, 
+                                                      keyVaultClient, 
+                                                      new DefaultKeyVaultSecretManager());
+            }
+            else
+            {
+                var azureServiceTokenProvider = new AzureServiceTokenProvider(keyVaultConnectionString);
+                var keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
+                configurationBuilder.AddAzureKeyVault(keyVaultUrl,
+                                                      keyVaultClient,
+                                                      new DefaultKeyVaultSecretManager());
+            }
+
+            // Read configuration from Key Vault
+            builtConfig = configurationBuilder.Build();
+
+            // Read the Application Insights Instrumentation Key stored in Key Vault
+            applicationInsightsInstrumentationKey = builtConfig["ApplicationInsights:InstrumentationKey"];
         }
         #endregion
     }
