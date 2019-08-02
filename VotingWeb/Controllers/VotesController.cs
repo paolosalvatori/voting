@@ -18,7 +18,8 @@ namespace VotingWeb.Controllers
     {
         #region Private Fields
         private readonly ILogger<VotesController> logger;
-        private readonly HttpClient httpClient;
+        private static HttpClient httpClient;
+        private static object semaphore = new object();
         #endregion
 
         #region Public Constructor
@@ -30,10 +31,16 @@ namespace VotingWeb.Controllers
                 this.logger = logger;
                 var url = configuration["VotingDataEndpoint"] ?? "votingdata";
                 var endpoint = $"http://{url}/";
-                httpClient = new HttpClient
+                lock (semaphore)
                 {
-                    BaseAddress = new Uri(endpoint)
-                };
+                    if (httpClient == null)
+                    {
+                        httpClient = new HttpClient
+                        {
+                            BaseAddress = new Uri(endpoint)
+                        };
+                    }
+                }
             }
             catch (Exception ex)
             {

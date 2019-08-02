@@ -1,0 +1,1 @@
+jmeter -g testresults.jtl -o results

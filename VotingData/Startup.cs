@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Swashbuckle.AspNetCore.Swagger;
+using System.Net;
 using VotingData.Models;
 using VotingData.Services;
 
@@ -30,6 +31,8 @@ namespace VotingData
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            ServicePointManager.DefaultConnectionLimit = 1000;
+
             services.AddOptions();
             var aiStorageFolder = Configuration.GetValue("ApplicationInsightsStorageFolder", "ApplicationInsights");
             if (aiStorageFolder != null)
