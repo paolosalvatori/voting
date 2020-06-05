@@ -1,22 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.329
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30128.74
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VotingData", "VotingData\VotingData.csproj", "{435E9A22-5205-4E4D-8900-E91876D681F6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VotingWeb", "VotingWeb\VotingWeb.csproj", "{60107547-E213-4FA0-A139-DE8B83269481}"
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{955186A3-C77C-4EFB-B004-8994465E0C59}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{7CEF872D-BA3A-4A8F-B58B-57741B6245F5}"
-	ProjectSection(SolutionItems) = preProject
-		Scripts\add-linkerd.sh = Scripts\add-linkerd.sh
-		Scripts\create-service-profile-from-swagger.sh = Scripts\create-service-profile-from-swagger.sh
-		Scripts\push-docker-images.sh = Scripts\push-docker-images.sh
-		Scripts\voting-data-service-profile.yml = Scripts\voting-data-service-profile.yml
-		Scripts\voting.yml = Scripts\voting.yml
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

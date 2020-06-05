@@ -67,7 +67,8 @@ namespace VotingWeb.Controllers
                     return Json(result);
                 }
 
-                result.AddRange(JsonConvert.DeserializeObject<List<KeyValuePair<string, int>>>(await response.Content.ReadAsStringAsync()));
+                var content = await response.Content.ReadAsStringAsync();
+                result.AddRange(JsonConvert.DeserializeObject<List<KeyValuePair<string, int>>>(content));
 
                 logger.LogInformation($"{result.Count} results retrieved from VotingData service");
 
@@ -94,11 +95,12 @@ namespace VotingWeb.Controllers
 
                 using (var response = await httpClient.PutAsync($"/api/VoteData/{name}", null))
                 {
-                    return new ContentResult
+                    var contentResult = new ContentResult
                     {
                         StatusCode = (int)response.StatusCode,
                         Content = await response.Content.ReadAsStringAsync()
                     };
+                    return contentResult;
                 }
             }
             catch (Exception ex)

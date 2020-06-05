@@ -47,12 +47,10 @@ namespace VotingData.Services
     public class ServiceBusNotificationService : NotificationService
     {
         #region Private Instance Fields
-
         private readonly IConfiguration configuration;
         private readonly NotificationServiceOptions options;
         private readonly QueueClient queueClient;
         private readonly ILogger<NotificationService> logger;
-        private readonly TelemetryClient telemetryClient;
         #endregion
 
         #region Public Constructor
@@ -98,7 +96,7 @@ namespace VotingData.Services
                 else if (this.options.ServiceBus.ConnectionString.ToLower().EndsWith(".servicebus.windows.net"))
                 {
                     logger.LogInformation("Using System-Assigned Managed Instance to connect to the Service Bus namespace...");
-                    var tokenProvider = new ManagedServiceIdentityTokenProvider();
+                    var tokenProvider = new ManagedIdentityTokenProvider();
                     queueClient = new QueueClient(this.options.ServiceBus.ConnectionString,
                                                   this.options.ServiceBus.QueueName,
                                                   tokenProvider);
@@ -115,7 +113,6 @@ namespace VotingData.Services
                 {
                     return;
                 }
-                telemetryClient = new TelemetryClient { InstrumentationKey = instrumentationKey };
             }
             catch (Exception ex)
             {
@@ -148,59 +145,7 @@ namespace VotingData.Services
 
             message.ExtractActivity();
 
-            try
-            {
-                await queueClient.SendAsync(message).ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                telemetryClient.TrackException(e);
-                throw;
-            }
-
-            //// StartOperation is a helper method that initializes the telemetry item
-            //// and allows correlation of this operation with its parent and children.
-            //var queueName = options.ServiceBus.QueueName.FirstLetterToUpper();
-            //using (var operation = telemetryClient.StartOperation<DependencyTelemetry>(activity))
-            //{
-            //    operation.Telemetry.Type = "Queue";
-            //    operation.Telemetry.Data = "Send";
-            //    operation.Telemetry.Target = queueName;
-            //    operation.Telemetry.Properties.Add(nameof(Message.MessageId), message.MessageId);
-
-            //    message.UserProperties.Add("source", "VotingData");
-
-            //    message.UserProperties.Add("ParentId", operation.Telemetry.Id);
-            //    message.UserProperties.Add("RootId", operation.Telemetry.Context.Operation.Id);
-
-            //    if (notification.UserProperties != null && notification.UserProperties.Any())
-            //    {
-            //        foreach (var property in notification.UserProperties)
-            //        {
-            //            message.UserProperties.Add(property.Key, property.Value);
-            //        }
-            //    }
-
-            //    try
-            //    {
-            //        await queueClient.SendAsync(message).ConfigureAwait(false);
-
-            //        // Set operation.Telemetry Success and ResponseCode here.
-            //        operation.Telemetry.Success = true;
-            //    }
-            //    catch (Exception e)
-            //    {
-            //        telemetryClient.TrackException(e);
-
-            //        // Set operation.Telemetry Success and ResponseCode here.
-            //        operation.Telemetry.Success = false;
-            //        throw;
-            //    }
-            //    finally
-            //    {
-            //        telemetryClient.StopOperation(operation);
-            //    }
-            //}
+            await queueClient.SendAsync(message).ConfigureAwait(false);
 
             stopwatch.Stop();
             logger.LogInformation($"Notification sent to {options.ServiceBus.QueueName} queue in {stopwatch.ElapsedMilliseconds} ms.");

@@ -114,10 +114,12 @@ namespace VotingData.Services
                 {
                     throw new ArgumentNullException(nameof(name), "The name cannot null or empty.");
                 }
-
-                return documentClient.CreateDocumentQuery<T>(
-                        UriFactory.CreateDocumentCollectionUri(repositoryServiceOptions.CosmosDb.DatabaseName,
-                            repositoryServiceOptions.CosmosDb.CollectionName))
+                var feedOptions = new FeedOptions { 
+                    EnableCrossPartitionQuery = true 
+                };
+                var documentCollectionUri = UriFactory.CreateDocumentCollectionUri(repositoryServiceOptions.CosmosDb.DatabaseName,
+                                                                         repositoryServiceOptions.CosmosDb.CollectionName);
+                return documentClient.CreateDocumentQuery<T>(documentCollectionUri, feedOptions)
                     .Where(so => so.Name == name)
                     .AsEnumerable()
                     .FirstOrDefault();
@@ -187,8 +189,11 @@ namespace VotingData.Services
             {
                 var documentCollectionUri = UriFactory.CreateDocumentCollectionUri(repositoryServiceOptions.CosmosDb.DatabaseName,
                                                                                    repositoryServiceOptions.CosmosDb.CollectionName);
-                var queryOptions = new FeedOptions { MaxItemCount = -1 };
-                var query = documentClient.CreateDocumentQuery<T>(documentCollectionUri, queryOptions);
+                var feedOptions = new FeedOptions { 
+                    MaxItemCount = -1, 
+                    EnableCrossPartitionQuery = true 
+                };
+                var query = documentClient.CreateDocumentQuery<T>(documentCollectionUri, feedOptions);
                 return await Task.FromResult<IEnumerable<T>>(query.ToList());
             }
             catch (DocumentClientException e)
@@ -330,10 +335,13 @@ namespace VotingData.Services
                 {
                     throw new ArgumentNullException(nameof(name), "The name cannot null or empty.");
                 }
-
+                var documentCollectionUri = UriFactory.CreateDocumentCollectionUri(repositoryServiceOptions.CosmosDb.DatabaseName,
+                                                                                   repositoryServiceOptions.CosmosDb.CollectionName);
+                var feedOptions = new FeedOptions {
+                    EnableCrossPartitionQuery = true
+                };
                 var document = documentClient.
-                    CreateDocumentQuery<T>(UriFactory.CreateDocumentCollectionUri(repositoryServiceOptions.CosmosDb.DatabaseName,
-                    repositoryServiceOptions.CosmosDb.CollectionName))
+                    CreateDocumentQuery<T>(documentCollectionUri, feedOptions)
                     .Where(so => so.Name == name)
                     .AsEnumerable()
                     .FirstOrDefault();

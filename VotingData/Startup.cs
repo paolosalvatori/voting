@@ -8,7 +8,10 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Swagger;
+using System;
 using System.Net;
 using VotingData.Models;
 using VotingData.Services;
@@ -46,28 +49,34 @@ namespace VotingData
             services.Configure<NotificationServiceOptions>(Configuration.GetSection("NotificationService"));
             services.AddSingleton<INotificationService, ServiceBusNotificationService>();
             services.AddSingleton<IRepositoryService<Vote>, CosmosDbRepositoryService<Vote>>();
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddMvc(option => option.EnableEndpointRouting = false);
 
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Info
+                c.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Version = "v1",
                     Title = "Voting API",
                     Description = "REST API exposed by the VotingData service",
-                    TermsOfService = "None",
-                    Contact = new Contact {
-                        Name = @"Paolo Salvatori",
+                    TermsOfService = new Uri("https://www.apache.org/licenses/LICENSE-2.0"),
+                    Contact = new OpenApiContact
+                    {
+                        Name = "Paolo Salvatori",
                         Email = "paolos@microsoft.com",
-                        Url = "https://github.com/paolosalvatori"
+                        Url = new Uri("https://github.com/paolosalvatori")
                     },
+                    License = new OpenApiLicense
+                    {
+                        Name = "Use under Apache License 2.0",
+                        Url = new Uri("https://www.apache.org/licenses/LICENSE-2.0")
+                    }
                 });
             });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {

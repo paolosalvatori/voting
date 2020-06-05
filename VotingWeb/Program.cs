@@ -25,7 +25,6 @@ namespace VotingWeb
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseApplicationInsights()
                 .CaptureStartupErrors(true)
                 .UseSetting(WebHostDefaults.DetailedErrorsKey, "true")
                 .UseStartup<Startup>()
@@ -61,29 +60,27 @@ namespace VotingWeb
             var keyVaultName = builtConfig["KeyVault:Name"];
             var keyVaultConnectionString = builtConfig["KeyVault:ConnectionString"];
 
-            if (string.IsNullOrWhiteSpace(keyVaultName))
+            if (!string.IsNullOrWhiteSpace(keyVaultName))
             {
-                return;
-            }
+                var keyVaultUrl = $"https://{keyVaultName}.vault.azure.net/";
 
-            var keyVaultUrl = $"https://{keyVaultName}.vault.azure.net/";
-
-            if (string.IsNullOrWhiteSpace(keyVaultConnectionString) ||
-               string.Compare(keyVaultConnectionString, "none", true) == 0)
-            {
-                var azureServiceTokenProvider = new AzureServiceTokenProvider();
-                var keyVaultClient = new KeyVaultClient((authority, resource, scope) => azureServiceTokenProvider.KeyVaultTokenCallback(authority, resource, scope));
-                configurationBuilder.AddAzureKeyVault(keyVaultUrl, 
-                                                      keyVaultClient, 
-                                                      new DefaultKeyVaultSecretManager());
-            }
-            else
-            {
-                var azureServiceTokenProvider = new AzureServiceTokenProvider(keyVaultConnectionString);
-                var keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
-                configurationBuilder.AddAzureKeyVault(keyVaultUrl,
-                                                      keyVaultClient,
-                                                      new DefaultKeyVaultSecretManager());
+                if (string.IsNullOrWhiteSpace(keyVaultConnectionString) ||
+                   string.Compare(keyVaultConnectionString, "none", true) == 0)
+                {
+                    var azureServiceTokenProvider = new AzureServiceTokenProvider();
+                    var keyVaultClient = new KeyVaultClient((authority, resource, scope) => azureServiceTokenProvider.KeyVaultTokenCallback(authority, resource, scope));
+                    configurationBuilder.AddAzureKeyVault(keyVaultUrl,
+                                                          keyVaultClient,
+                                                          new DefaultKeyVaultSecretManager());
+                }
+                else
+                {
+                    var azureServiceTokenProvider = new AzureServiceTokenProvider(keyVaultConnectionString);
+                    var keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
+                    configurationBuilder.AddAzureKeyVault(keyVaultUrl,
+                                                          keyVaultClient,
+                                                          new DefaultKeyVaultSecretManager());
+                }
             }
 
             // Read configuration from Key Vault
